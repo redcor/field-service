@@ -50,6 +50,7 @@ class FSMOrder(models.Model):
     fsm_route_id = fields.Many2one('fsm.route', string='Route', index=True)
     scheduled_date_start = fields.Datetime(string='Scheduled Start')
     scheduled_duration = fields.Float(string='Duration in hours',
+                                      compute='_strip_seconds',
                                       help='Scheduled duration of the work in'
                                            ' hours')
     scheduled_date_end = fields.Datetime(string="Scheduled End")
@@ -60,6 +61,14 @@ class FSMOrder(models.Model):
     log = fields.Text(string='Log')
     date_start = fields.Datetime(string='Actual Start')
     date_end = fields.Datetime(string='Actual End')
+
+    # strip seconds from date
+    def _strip_seconds(self):
+        for running_date in [self.scheduled_date_start, self.scheduled_date_end,  self.requested_date]:
+            if running_date:
+                print('------->', running_date)
+        pass
+
 
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
