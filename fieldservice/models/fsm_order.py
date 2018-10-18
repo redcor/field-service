@@ -1,7 +1,7 @@
 # Copyright (C) 2018 - TODAY, Open Source Integrators
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from odoo import api, fields, models, _
 from . import fsm_stage
 
@@ -50,7 +50,6 @@ class FSMOrder(models.Model):
     fsm_route_id = fields.Many2one('fsm.route', string='Route', index=True)
     scheduled_date_start = fields.Datetime(string='Scheduled Start')
     scheduled_duration = fields.Float(string='Duration in hours',
-                                      compute='_strip_seconds',
                                       help='Scheduled duration of the work in'
                                            ' hours')
     scheduled_date_end = fields.Datetime(string="Scheduled End")
@@ -61,14 +60,6 @@ class FSMOrder(models.Model):
     log = fields.Text(string='Log')
     date_start = fields.Datetime(string='Actual Start')
     date_end = fields.Datetime(string='Actual End')
-
-    # strip seconds from date
-    def _strip_seconds(self):
-        for running_date in [self.scheduled_date_start, self.scheduled_date_end,  self.requested_date]:
-            if running_date:
-                print('------->', running_date)
-        pass
-
 
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
@@ -84,9 +75,12 @@ class FSMOrder(models.Model):
 
     @api.multi
     def write(self, vals):
+        def _strip_seconds(running_date):
+            #running_date = datetime.strptime(running_date, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M')
+            return running_date
         if 'scheduled_date_end' in vals:
             date_to_with_delta = fields.Datetime.from_string(
-                vals.get('scheduled_date_end')) -\
+                _strip_seconds(vals.get('scheduled_date_end'))) -\
                 timedelta(hours=self.scheduled_duration)
             vals['scheduled_date_start'] = str(date_to_with_delta)
         if 'scheduled_duration' in vals:
@@ -96,7 +90,7 @@ class FSMOrder(models.Model):
             vals['scheduled_date_end'] = str(date_to_with_delta)
         if 'scheduled_date_end' not in vals and 'scheduled_date_start' in vals:
             date_to_with_delta = fields.Datetime.from_string(
-                vals.get('scheduled_date_start')) +\
+                _strip_seconds(vals.get('scheduled_date_start'))) +\
                 timedelta(hours=self.scheduled_duration)
             vals['scheduled_date_end'] = str(date_to_with_delta)
         return super(FSMOrder, self).write(vals)
@@ -148,3 +142,12 @@ class FSMOrder(models.Model):
                 self.scheduled_date_start) +\
                 timedelta(hours=self.scheduled_duration)
             self.scheduled_date_end = str(date_to_with_delta)
+
+    # strip seconds from date
+    def _strip_seconds(self):
+        for running_date in [self.scheduled_date_start, self.scheduled_date_end,  self.requested_date]:
+            if running_date:
+                # when the particular dat was never set
+                print(datetime.strptime(running_date, '%Y-%m-%d %H:%M:%S').strftime('%B %d,%Y'))
+                print('------->', running_date)
+        pass

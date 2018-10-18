@@ -71,7 +71,9 @@
                         <page string="Request">
                             <group>
                                 <group>
-                                    <field name="requested_date"/>
+                                    <field name="requested_date">
+                                        <attribute name="t-options">{"format": "dd / MM / yyyy"}</attribute>
+                                    </field>
                                 </group>
                                 <group>
                                     <field name="origin"/>
